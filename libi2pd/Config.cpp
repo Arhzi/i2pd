@@ -32,8 +32,10 @@ namespace config {
 		options_description general("General options");
 		general.add_options()
 			("help",                                                          "Show this message")
+			("version",                                                       "Show i2pd version")
 			("conf", value<std::string>()->default_value(""),                 "Path to main i2pd config file (default: try ~/.i2pd/i2pd.conf or /var/lib/i2pd/i2pd.conf)")
 			("tunconf", value<std::string>()->default_value(""),              "Path to config with tunnels list and options (default: try ~/.i2pd/tunnels.conf or /var/lib/i2pd/tunnels.conf)")
+			("tunnelsdir", value<std::string>()->default_value(""),   "Path to extra tunnels' configs folder (default: ~/.i2pd/tunnels.d or /var/lib/i2pd/tunnels.d")
 			("pidfile", value<std::string>()->default_value(""),              "Path to pidfile (default: ~/i2pd/i2pd.pid or /var/lib/i2pd/i2pd.pid)")
 			("log", value<std::string>()->default_value(""),                  "Logs destination: stdout, file, syslog (stdout if not set)")
 			("logfile", value<std::string>()->default_value(""),              "Path to logfile (stdout if not set, autodetect if daemon)")
@@ -59,7 +61,6 @@ namespace config {
 			("ntcp", value<bool>()->default_value(true),                      "Enable NTCP transport (default: enabled)")
 			("ssu", value<bool>()->default_value(true),                       "Enable SSU transport (default: enabled)")
 			("ntcpproxy", value<std::string>()->default_value(""),            "Proxy URL for NTCP transport")
-			("ntcp2", value<bool>()->default_value(false),                    "Enable NTCP2 (experimental, default: disabled)")
 #ifdef _WIN32
 			("svcctl", value<std::string>()->default_value(""),               "Windows service management ('install' or 'remove')")
 			("insomnia", bool_switch()->default_value(false),                 "Prevent system from sleeping (default: disabled)")
@@ -232,6 +233,13 @@ namespace config {
 			("exploratory.outbound.quantity", value<int>()->default_value(3), "Exploratory outbound tunnels quantity")
 		;
 
+		options_description ntcp2("NTCP2 Options");
+		ntcp2.add_options()
+			("ntcp2.enabled", value<bool>()->default_value(true), "Enable NTCP2 (default: enabled)")
+		    ("ntcp2.published", value<bool>()->default_value(false), "Publish NTCP2 (default: disabled)")	
+			("ntcp2.port", value<uint16_t>()->default_value(0), "Port to listen for incoming NTCP2 connections (default: auto)")
+		;
+
 		m_OptionsDesc
 			.add(general)
 			.add(limits)
@@ -249,6 +257,7 @@ namespace config {
 			.add(trust)
 			.add(websocket)
 			.add(exploratory)
+			.add(ntcp2)
 		;
 	}
 
@@ -274,6 +283,23 @@ namespace config {
 		{
 			std::cout << "i2pd version " << I2PD_VERSION << " (" << I2P_VERSION << ")" << std::endl;
 			std::cout << m_OptionsDesc;
+			exit(EXIT_SUCCESS);
+		} 
+		else if (m_Options.count("version"))
+		{
+			std::cout << "i2pd version " << I2PD_VERSION << " (" << I2P_VERSION << ")" << std::endl;
+			std::cout << "Boost version "     
+					  << BOOST_VERSION / 100000     << "."  // maj. version
+					  << BOOST_VERSION / 100 % 1000 << "."  // min. version
+					  << BOOST_VERSION % 100                // patch version
+					  << std::endl;
+#if defined(OPENSSL_VERSION_TEXT) 
+			std::cout << OPENSSL_VERSION_TEXT << std::endl;
+#endif
+#if defined(LIBRESSL_VERSION_TEXT)
+			std::cout << LIBRESSL_VERSION_TEXT << std::endl;
+#endif
+
 			exit(EXIT_SUCCESS);
 		}
 	}
