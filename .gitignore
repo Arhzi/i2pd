@@ -277,3 +277,7 @@ android/libs/
 
 qt/build-*.sh*
 
+# Visual studio code
+
+.vscode/*
+
