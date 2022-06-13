@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013-2020, The PurpleI2P Project
+* Copyright (c) 2013-2022, The PurpleI2P Project
 *
 * This file is part of Purple i2pd project and licensed under BSD3
 *
@@ -22,6 +22,7 @@
 #include <boost/asio.hpp>
 #include "TransportSession.h"
 #include "SSU.h"
+#include "SSU2.h"
 #include "NTCP2.h"
 #include "RouterInfo.h"
 #include "I2NPProtocol.h"
@@ -60,7 +61,7 @@ namespace transport
 			std::mutex m_AcquiredMutex;
 	};
 	typedef EphemeralKeysSupplier<i2p::crypto::X25519Keys> X25519KeysPairSupplier;
-	
+
 	struct Peer
 	{
 		int numAttempts;
@@ -86,7 +87,7 @@ namespace transport
 			Transports ();
 			~Transports ();
 
-			void Start (bool enableNTCP2=true, bool enableSSU=true);
+			void Start (bool enableNTCP2=true, bool enableSSU=true, bool enableSSU2=false);
 			void Stop ();
 
 			bool IsBoundSSU() const { return m_SSUServer != nullptr; }
@@ -125,7 +126,7 @@ namespace transport
 			/** do we want to use restricted routes? */
 			bool RoutesRestricted() const;
 			/** restrict routes to use only these router families for first hops */
-			void RestrictRoutesToFamilies(std::set<std::string> families);
+			void RestrictRoutesToFamilies(const std::set<std::string>& families);
 			/** restrict routes to use only these routers for first hops */
 			void RestrictRoutesToRouters(std::set<i2p::data::IdentHash> routers);
 
@@ -159,6 +160,7 @@ namespace transport
 			boost::asio::deadline_timer * m_PeerCleanupTimer, * m_PeerTestTimer;
 
 			SSUServer * m_SSUServer;
+			SSU2Server * m_SSU2Server;
 			NTCP2Server * m_NTCP2Server;
 			mutable std::mutex m_PeersMutex;
 			std::unordered_map<i2p::data::IdentHash, Peer> m_Peers;
@@ -171,7 +173,7 @@ namespace transport
 			uint64_t m_LastBandwidthUpdateTime;
 
 			/** which router families to trust for first hops */
-			std::vector<std::string> m_TrustedFamilies;
+			std::vector<i2p::data::FamilyID> m_TrustedFamilies;
 			mutable std::mutex m_FamilyMutex;
 
 			/** which routers for first hop to trust */
@@ -185,6 +187,7 @@ namespace transport
 			// for HTTP only
 			const SSUServer * GetSSUServer () const { return m_SSUServer; };
 			const NTCP2Server * GetNTCP2Server () const { return m_NTCP2Server; };
+			const SSU2Server * GetSSU2Server () const { return m_SSU2Server; };
 			const decltype(m_Peers)& GetPeers () const { return m_Peers; };
 	};
 
