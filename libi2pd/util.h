@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013-2021, The PurpleI2P Project
+* Copyright (c) 2013-2024, The PurpleI2P Project
 *
 * This file is part of Purple i2pd project and licensed under BSD3
 *
@@ -112,7 +112,7 @@ namespace util
 	};
 
 	template<class T>
-	class MemoryPoolMt: public MemoryPool<T>
+	class MemoryPoolMt: private MemoryPool<T>
 	{
 		public:
 
@@ -131,6 +131,14 @@ namespace util
 				this->Release (t);
 			}
 
+			void ReleaseMt (T * * arr, size_t num)
+			{
+				if (!arr || !num) return;
+				std::lock_guard<std::mutex> l(m_Mutex);
+				for (size_t i = 0; i < num; i++)
+					this->Release (arr[i]);
+			}	
+			
 			template<template<typename, typename...>class C, typename... R>
 			void ReleaseMt(const C<T *, R...>& c)
 			{
@@ -138,7 +146,7 @@ namespace util
 				for (auto& it: c)
 					this->Release (it);
 			}
-
+			
 			template<typename... TArgs>
 			std::shared_ptr<T> AcquireSharedMt (TArgs&&... args)
 			{
@@ -218,11 +226,13 @@ namespace util
 	namespace net
 	{
 		int GetMTU (const boost::asio::ip::address& localAddress);
+		int GetMaxMTU (const boost::asio::ip::address_v6& localAddress); // check tunnel broker for ipv6 address
 		const boost::asio::ip::address GetInterfaceAddress (const std::string & ifname, bool ipv6=false);
 		boost::asio::ip::address_v6 GetYggdrasilAddress ();
 		bool IsLocalAddress (const boost::asio::ip::address& addr);
 		bool IsInReservedRange (const boost::asio::ip::address& host);
 		bool IsYggdrasilAddress (const boost::asio::ip::address& addr);
+		bool IsPortInReservedRange (const uint16_t port) noexcept;
 	}
 }
 }

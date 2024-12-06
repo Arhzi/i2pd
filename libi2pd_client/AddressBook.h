@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013-2022, The PurpleI2P Project
+* Copyright (c) 2013-2024, The PurpleI2P Project
 *
 * This file is part of Purple i2pd project and licensed under BSD3
 *
@@ -90,6 +90,8 @@ namespace client
 			void InsertAddress (const std::string& address, const std::string& jump); // for jump links
 			void InsertFullAddress (std::shared_ptr<const i2p::data::IdentityEx> address);
 
+			bool RecordExists (const std::string& address, const std::string& jump);
+
 			bool LoadHostsFromStream (std::istream& f, bool is_update);
 			void DownloadComplete (bool success, const i2p::data::IdentHash& subscription, const std::string& etag, const std::string& lastModified);
 			//This method returns the ".b32.i2p" address
@@ -97,7 +99,8 @@ namespace client
 			std::string ToAddress(std::shared_ptr<const i2p::data::IdentityEx> ident) { return ToAddress(ident->GetIdentHash ()); }
 
 			bool GetEtag (const i2p::data::IdentHash& subscription, std::string& etag, std::string& lastModified);
-
+			bool IsEnabled () const { return m_IsEnabled; }
+			
 		private:
 
 			void StartSubscriptions ();

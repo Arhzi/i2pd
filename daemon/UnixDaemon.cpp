@@ -24,6 +24,7 @@
 #include "Tunnel.h"
 #include "RouterContext.h"
 #include "ClientContext.h"
+#include "Transports.h"
 
 void handle_signal(int sig)
 {
@@ -53,6 +54,14 @@ void handle_signal(int sig)
 		break;
 		case SIGPIPE:
 			LogPrint(eLogInfo, "SIGPIPE received");
+		break;
+		case SIGTSTP:
+			LogPrint(eLogInfo, "Daemon: Got SIGTSTP, disconnecting from network...");
+			i2p::transport::transports.SetOnline(false);
+		break;
+		case SIGCONT:
+			LogPrint(eLogInfo, "Daemon: Got SIGCONT, restoring connection to network...");
+			i2p::transport::transports.SetOnline(true);
 		break;
 	}
 }
@@ -153,23 +162,35 @@ namespace i2p
 
 #ifndef ANDROID
 				if (lockf(pidFH, F_TLOCK, 0) != 0)
+#else
+				struct flock fl;
+				fl.l_len = 0;
+				fl.l_type = F_WRLCK;
+				fl.l_whence = SEEK_SET;
+				fl.l_start = 0;
+
+				if (fcntl(pidFH, F_SETLK, &fl) != 0)
+#endif
 				{
 					LogPrint(eLogError, "Daemon: Could not lock pid file ", pidfile, ": ", strerror(errno));
 					std::cerr << "i2pd: Could not lock pid file " << pidfile << ": " << strerror(errno) << std::endl;
 					return false;
 				}
-#endif
+
 				char pid[10];
 				sprintf(pid, "%d\n", getpid());
 				ftruncate(pidFH, 0);
 				if (write(pidFH, pid, strlen(pid)) < 0)
 				{
-					LogPrint(eLogError, "Daemon: Could not write pidfile ", pidfile, ": ", strerror(errno));
+					LogPrint(eLogCritical, "Daemon: Could not write pidfile ", pidfile, ": ", strerror(errno));
 					std::cerr << "i2pd: Could not write pidfile " << pidfile << ": " << strerror(errno) << std::endl;
 					return false;
 				}
 			}
 			gracefulShutdownInterval = 0; // not specified
+
+			// handle signal TSTP
+			bool handleTSTP; i2p::config::GetOption("unix.handle_sigtstp", handleTSTP);
 
 			// Signal handler
 			struct sigaction sa;
@@ -182,6 +203,11 @@ namespace i2p
 			sigaction(SIGTERM, &sa, 0);
 			sigaction(SIGINT, &sa, 0);
 			sigaction(SIGPIPE, &sa, 0);
+			if (handleTSTP)
+			{
+				sigaction(SIGTSTP, &sa, 0);
+				sigaction(SIGCONT, &sa, 0);
+			}
 
 			return Daemon_Singleton::start();
 		}

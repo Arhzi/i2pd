@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013-2022, The PurpleI2P Project
+* Copyright (c) 2013-2024, The PurpleI2P Project
 *
 * This file is part of Purple i2pd project and licensed under BSD3
 *
@@ -50,9 +50,8 @@ namespace garlic
 	const int INCOMING_TAGS_EXPIRATION_TIMEOUT = 960; // 16 minutes
 	const int OUTGOING_TAGS_EXPIRATION_TIMEOUT = 720; // 12 minutes
 	const int OUTGOING_TAGS_CONFIRMATION_TIMEOUT = 10; // 10 seconds
-	const int LEASET_CONFIRMATION_TIMEOUT = 4000; // in milliseconds
-	const int ROUTING_PATH_EXPIRATION_TIMEOUT = 30; // 30 seconds
-	const int ROUTING_PATH_MAX_NUM_TIMES_USED = 100; // how many times might be used
+	const int LEASESET_CONFIRMATION_TIMEOUT = 4000; // in milliseconds
+	const int ROUTING_PATH_EXPIRATION_TIMEOUT = 120; // in seconds
 
 	struct SessionTag: public i2p::data::Tag<32>
 	{
@@ -89,7 +88,6 @@ namespace garlic
 		std::shared_ptr<const i2p::data::Lease> remoteLease;
 		int rtt; // RTT
 		uint32_t updateTime; // seconds since epoch
-		int numTimesUsed;
 	};
 
 	class GarlicDestination;
@@ -111,7 +109,7 @@ namespace garlic
 			GarlicRoutingSession ();
 			virtual ~GarlicRoutingSession ();
 			virtual std::shared_ptr<I2NPMessage> WrapSingleMessage (std::shared_ptr<const I2NPMessage> msg) = 0;
-			virtual bool CleanupUnconfirmedTags () { return false; }; // for I2CP, override in ElGamalAESSession
+			virtual bool CleanupUnconfirmedTags () { return false; }; // for I2CP, override in ElGamalAESSession and ECIESX25519AEADRatchetSession
 			virtual bool MessageConfirmed (uint32_t msgID);
 			virtual bool IsRatchets () const { return false; };
 			virtual bool IsReadyToSend () const { return true; };
@@ -221,7 +219,7 @@ namespace garlic
 	struct ECIESX25519AEADRatchetIndexTagset
 	{
 		int index;
-		ReceiveRatchetTagSetPtr tagset;
+		ReceiveRatchetTagSetPtr tagset; // null if used
 	};
 
 	class GarlicDestination: public i2p::data::LocalDestination
@@ -290,7 +288,6 @@ namespace garlic
 			int m_NumRatchetInboundTags;
 			std::unordered_map<SessionTag, std::shared_ptr<AESDecryption>, std::hash<i2p::data::Tag<32> > > m_Tags;
 			std::unordered_map<uint64_t, ECIESX25519AEADRatchetIndexTagset> m_ECIESx25519Tags; // session tag -> session
-			ReceiveRatchetTagSetPtr m_LastTagset; // tagset last message came for
 			// DeliveryStatus
 			std::mutex m_DeliveryStatusSessionsMutex;
 			std::unordered_map<uint32_t, GarlicRoutingSessionPtr> m_DeliveryStatusSessions; // msgID -> session

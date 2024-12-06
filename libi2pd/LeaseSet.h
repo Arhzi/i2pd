@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013-2021, The PurpleI2P Project
+* Copyright (c) 2013-2024, The PurpleI2P Project
 *
 * This file is part of Purple i2pd project and licensed under BSD3
 *
@@ -96,6 +96,9 @@ namespace data
 			void Encrypt (const uint8_t * data, uint8_t * encrypted) const;
 			bool IsDestination () const { return true; };
 
+			// used in webconsole
+			void ExpireLease () { m_ExpirationTime = i2p::util::GetSecondsSinceEpoch (); };
+
 		protected:
 
 			void UpdateLeasesBegin ();
@@ -145,6 +148,7 @@ namespace data
 	{
 		public:
 
+			LeaseSet2 (uint8_t storeType): LeaseSet (true), m_StoreType (storeType) {}; // for update
 			LeaseSet2 (uint8_t storeType, const uint8_t * buf, size_t len, bool storeLeases = true, CryptoKeyType preferredCrypto = CRYPTO_KEY_TYPE_ELGAMAL);
 			LeaseSet2 (const uint8_t * buf, size_t len, std::shared_ptr<const BlindedPublicKey> key, const uint8_t * secret = nullptr, CryptoKeyType preferredCrypto = CRYPTO_KEY_TYPE_ELGAMAL); // store type 5, called from local netdb only
 			uint8_t GetStoreType () const { return m_StoreType; };
@@ -252,7 +256,8 @@ namespace data
 			LocalLeaseSet2 (uint8_t storeType, const i2p::data::PrivateKeys& keys,
 				const KeySections& encryptionKeys,
 				const std::vector<std::shared_ptr<i2p::tunnel::InboundTunnel> >& tunnels,
-				bool isPublic, bool isPublishedEncrypted = false);
+				bool isPublic, uint64_t publishedTimestamp,
+			    bool isPublishedEncrypted = false);
 
 			LocalLeaseSet2 (uint8_t storeType, std::shared_ptr<const IdentityEx> identity, const uint8_t * buf, size_t len); // from I2CP
 
